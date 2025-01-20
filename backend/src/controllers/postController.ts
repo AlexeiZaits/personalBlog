@@ -20,15 +20,15 @@ class PostController {
 
             const mediaUrls = [];
             for (const [index, file] of media.entries()) {
-                const fileExtension = file.originalname.split('.').pop(); // Получение расширения
-                const fileName = `media/${userId}/${Date.now()}_${index}.${fileExtension}`; // Уникальное имя
-                const fileUrl = await yandexService.uploadFileToYandex(file.buffer, bucketName, fileName); // Загрузка
-                mediaUrls.push(fileUrl); // Сохраняем ссылку на загруженный файл
+                const fileExtension = file.originalname.split('.').pop(); 
+                const fileName = `media/${userId}/${Date.now()}_${index}.${fileExtension}`; 
+                const fileUrl = await yandexService.uploadFileToYandex(file.buffer, bucketName, fileName);
+                mediaUrls.push(fileUrl); 
             }
             
             // Сохранение поста в базе данных
             const post = await Post.create({ content, mediaUrls: mediaUrls, userId, lastname, firstname });
-            return res.status(201).json(post);
+            return res.status(200).json(post);
             } catch (err) {
             console.error('Ошибка создания поста:', err);
             return res.status(500).json({ error: "Ошибка в создании новой записи" });
@@ -51,7 +51,7 @@ class PostController {
             
             const post = await Post.findOne({ where: { id, userId } });
             if (!post) {
-                return res.status(404).json({ error: "Post not found or unauthorized" });
+                return res.status(400).json({ error: "Пост не найден" });
             }
             
             const mediaUrls = post.mediaUrls;
@@ -67,10 +67,10 @@ class PostController {
             
             await post.destroy();
             
-            res.json({ message: "Post and media deleted successfully" });
+            res.json({ message: "Пост успешно удалён" });
         } catch (err) {
             console.error(err);
-            res.status(500).json({ error: "Error deleting post" });
+            res.status(500).json({ error: "Ошибка в удаление поста" });
         }
     }
 
@@ -84,7 +84,7 @@ class PostController {
             const parseMediaUrls = JSON.parse(mediaUrls)
             console.log(parseMediaUrls)
             if (!post) {
-                return res.status(400).json({ error: "Post not found" });
+                return res.status(400).json({ error: "Пост не найден" });
             }
             
             const bucketName = 'personal-blog';
@@ -121,7 +121,7 @@ class PostController {
             post.mediaUrls = [...safeParseMediaUrls, ...safeMediaUrlsYandex];
             if (!post.mediaUrls && !post.content){
                 await post.destroy()
-                res.json({message: "Post and media deleted successfully"});
+                res.json({message: "Пост успешно удалён"});
             } else {
                 await post.save();
                 res.json(post);
@@ -129,7 +129,7 @@ class PostController {
             
             
         } catch (error) {
-            res.status(500).json({ error: "Error change post" });
+            res.status(500).json({ error: "Ошибка при изминение поста" });
         }
     }
     

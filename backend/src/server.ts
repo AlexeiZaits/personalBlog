@@ -5,14 +5,18 @@ import authRoutes from "./routes/authRoutes";
 import postRoutes from "./routes/postRoutes";
 import cors from 'cors';
 import cookieParser from "cookie-parser"
+import swaggerJsdoc from 'swagger-jsdoc';
+import swaggerOptions from './swaggerOption'; // Импортируйте ваш конфиг
+import swaggerUi from 'swagger-ui-express';
 
 dotenv.config();
 
 const app = express();
 
+const swaggerDocs = swaggerJsdoc(swaggerOptions);
+
 app.use(cookieParser())
 app.use(cors({
-  //разрешить всем
   origin: function (origin, callback) {
     callback(null, true);
   },
@@ -24,6 +28,7 @@ app.use(express.json());
 
 app.use("/auth", authRoutes);
 app.use("/posts", postRoutes);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 const startServer = async () => {
   await initDB();

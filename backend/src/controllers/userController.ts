@@ -16,7 +16,7 @@ class UserController {
             return res.status(500).json({message: "Ошибка при регистрации пользователя"})
         }
     }
-
+    
     async login (req: any, res: any, next: any){
         try {
             const {login, password} = req.body;
