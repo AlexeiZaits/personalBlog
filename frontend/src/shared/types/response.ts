@@ -1,10 +1,11 @@
 import { IUser } from "./user";
 
 export interface AuthResponse {
-    access_token: string,
-    refresh_token: string,
+    tokens: {
+        accessToken: string,
+        refreshToken: string,
+    }
     user: IUser,
-    login: string,
 }
 
 export interface RegResponse {

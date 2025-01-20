@@ -1,6 +1,7 @@
 export interface IUser {
-    isActivated: boolean,
     id: string | null,
+    firstname: string,
+    lastname: string,
 }
 
 export interface IFormInput {
