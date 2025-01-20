@@ -1,265 +1,120 @@
-import React, { useState, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Container,
   Typography,
-  TextField,
   Button,
-  Card,
-  CardContent,
-  CardActions,
-  IconButton,
-  Stack,
   Box,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
 } from '@mui/material';
-import { Delete, Edit, UploadFile, Close } from '@mui/icons-material';
-import { v4 as uuidv4 } from 'uuid';
-import { AuthForm } from 'widjets/index';
+import { AuthForm, DialogPost } from 'widjets/index';
+import { useActionsAuthorization } from 'features/authorization/hooks/use-actions-authorization';
+import { useAuthorization } from 'features/authorization/hooks/use-authorization';
+import * as api from "../../../config";
+import $client from 'shared/api';
+import { PostList } from 'features/postList/ui/PostList';
 
-// Types
-interface BlogPost {
-  id: string;
-  date: string;
-  message: string;
-  media?: string[];
-  author: string;
+export interface BlogPost {
+    content: string,
+    createdAt: Date,
+    firstname: "lexa",
+    id: number,
+    lastname: "string",
+    mediaUrls: string[],
+    updatedAt: Date,
+    userId: string
 }
 
-interface User {
-  name: string;
+export const checkVideo = (item:string) => {
+    const videoFormats = ['mp4', 'webm', 'ogg', 'avi', 'mov', 'mkv'];
+    return videoFormats.some((format) => item.toLowerCase().includes(`.${format}`));
 }
-
-// Mock user
-const currentUser: User = {
-  name: 'John Doe',
-};
 
 export const MainPage = () => {
+    const handleActions = useActionsAuthorization()
+    const [, authSlice] = useAuthorization()
     const [posts, setPosts] = useState<BlogPost[]>([]);
     const [message, setMessage] = useState('');
     const [media, setMedia] = useState<string[]>([]);
-    const [editingPostId, setEditingPostId] = useState<string | null>(null);
+    const [editingPostId, setEditingPostId] = useState<number | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
-  
+    
+    useEffect(() => {
+        handleActions("refresh")
+    }, [])
+
+    useEffect(() => {
+        $client.get(api.getPosts)
+        .then((data) => {
+            setPosts(data.data)
+        })
+
+    }, [])
+
+    const handelQuit = () => handleActions("logout")
     const openAuthDialog = () => setIsAuthDialogOpen(true);
     const closeAuthDialog = () => setIsAuthDialogOpen(false);
-
     const openDialog = () => setIsDialogOpen(true);
-    const closeDialog = () => {
-    setIsDialogOpen(false);
-    setMessage('');
-    setMedia([]);
-    setEditingPostId(null);
+
+    const handleEdit = (id: number) => {
+        const postToEdit = posts.find((post) => post.id === id);
+        if (postToEdit) {
+            setMessage(postToEdit.content);
+            setMedia(postToEdit.mediaUrls || []);
+            setEditingPostId(postToEdit.id);
+            openDialog();
+        }
     };
-
-    const handleMediaUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files) {
-        const readers = Array.from(files).map((file) => {
-        return new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.readAsDataURL(file);
-        });
-        });
-        Promise.all(readers).then((results) => {
-        setMedia((prevMedia) => [...prevMedia, ...results]);
-        });
-    }
-    };
-
-    const handleDeleteMedia = (index: number) => {
-    setMedia((prevMedia) => prevMedia.filter((_, i) => i !== index));
-    };
-
-    const handleAddOrEditPost = () => {
-    if (editingPostId) {
-        // Edit existing post
-        setPosts((prevPosts) =>
-        prevPosts.map((post) =>
-            post.id === editingPostId
-            ? { ...post, message, media }
-            : post
-        )
-        );
-    } else {
-        // Add new post
-        const newPost: BlogPost = {
-        id: uuidv4(),
-        date: new Date().toLocaleString(),
-        message,
-        media,
-        author: currentUser.name,
-        };
-        setPosts((prevPosts) => [newPost, ...prevPosts]);
-    }
-
-    closeDialog();
-    };
-
-    const handleEdit = (id: string) => {
-    const postToEdit = posts.find((post) => post.id === id);
-    if (postToEdit) {
-        setMessage(postToEdit.message);
-        setMedia(postToEdit.media || []);
-        setEditingPostId(postToEdit.id);
-        openDialog();
-    }
-    };
-
-    const handleDelete = (id: string) => {
-    setPosts((prevPosts) => prevPosts.filter((post) => post.id !== id));
+    
+    const handleDelete = (id: number) => {
+        setPosts((prevPosts) => prevPosts.filter((post) => post.id !== id));
+        $client.delete(api.deletePost(id))
+        .then((data) => {
+            console.log(data)
+        })
+        .catch((error) => {
+            console.log(error)
+        })
     };
 
     return (
-    <Container maxWidth="sm">
-        <Typography variant="h4" gutterBottom>
-        Blog Page
-        </Typography>
-        <Button
-                variant="contained"
-                color="primary"
-                onClick={openAuthDialog}
-                style={{ marginBottom: '1rem' }}
-        >Войти</Button>
-        <AuthForm open={isAuthDialogOpen} onClose={closeAuthDialog}/>
-        <Button
-        variant="contained"
-        color="primary"
-        onClick={openDialog}
-        style={{ marginBottom: '1rem' }}
-        >
-        Write a Post
-        </Button>
-
-        {posts.map((post) => (
-        <Card key={post.id} style={{ marginBottom: '1rem' }}>
-            <CardContent>
-            <Typography variant="body2" color="textSecondary">
-                {post.date}
-            </Typography>
-            <Typography variant="h6" gutterBottom>
-                {post.message}
-            </Typography>
-            {post.media && post.media.map((item, index) => (
-                item.startsWith('data:video') ? (
-                <video
-                    key={index}
-                    src={item}
-                    controls
-                    style={{ width: '100%', maxHeight: '300px', objectFit: 'cover', marginBottom: '1rem' }}
-                />
-                ) : (
-                <img
-                    key={index}
-                    src={item}
-                    alt={`Media Content ${index}`}
-                    style={{ width: '100%', maxHeight: '300px', objectFit: 'cover', marginBottom: '1rem' }}
-                />
-                )
-            ))}
-            <Typography variant="subtitle2" color="textSecondary">
-                By {post.author}
-            </Typography>
-            </CardContent>
-            {post.author === currentUser.name && (
-            <CardActions>
-                <IconButton
-                color="primary"
-                onClick={() => handleEdit(post.id)}
-                >
-                <Edit />
-                </IconButton>
-                <IconButton
-                color="secondary"
-                onClick={() => handleDelete(post.id)}
-                >
-                <Delete />
-                </IconButton>
-            </CardActions>
-            )}
-        </Card>
-        ))}
-
-        {/* Dialog for Add/Edit Post */}
-        <Dialog open={isDialogOpen} onClose={closeDialog} fullWidth maxWidth="sm">
-        <DialogTitle>{editingPostId ? 'Edit Post' : 'Write a Post'}</DialogTitle>
-        <DialogContent>
-            <TextField
-            label="Message"
-            fullWidth
-            multiline
-            rows={1}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            sx={{ marginBottom: '2rem', marginTop: "1rem" }}
-            />
-            <Stack direction="row" alignItems="center" spacing={2} style={{ marginBottom: '1rem' }}>
-            <Button
-                variant="outlined"
-                startIcon={<UploadFile />}
-                onClick={() => fileInputRef.current?.click()}
-            >
-                Upload Media
-            </Button>
-            <input
-                type="file"
-                accept="image/*,video/*"
-                multiple
-                onChange={handleMediaUpload}
-                ref={fileInputRef}
-                style={{ display: 'none' }}
-            />
-            </Stack>
-            <Box display="flex" flexWrap="wrap" gap={2}>
-            {media.map((item, index) => (
-                <Box key={index} position="relative" width="100px" height="100px">
-                {item.startsWith('data:video') ? (
-                    <video
-                    src={item}
-                    controls
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                ) : (
-                    <img
-                    src={item}
-                    alt={`Media Content ${index}`}
-                    style={{ width: 'auto', height: 'auto', objectFit: 'cover' }}
-                    />
-                )}
-                <IconButton
-                    onClick={() => handleDeleteMedia(index)}
-                    sx={{
-                    width: "1.5rem",
-                    height: "1.5rem",
-                    position: 'absolute',
-                    top: "0.2rem",
-                    right: "0.2rem",
-                    border: "2px solid",
-                    borderColor: "#d3450f",
-                    color: '#d3450f',
-                    }}
-                >
-                    <Close sx={{fontSize: "1.2rem"}}/>
-                </IconButton>
-                </Box>
-            ))}
+    <Container maxWidth="sm" sx={{display: "grid", gap: "30px"}}>
+        <Container  sx={{display: "flex", flexDirection: "row", justifyContent: "space-between", marginTop: "1rem", padding: "0rem !important"}}>
+            <Box>
+                <Typography variant="h5">
+                    Блог постов
+                </Typography>
             </Box>
-        </DialogContent>
-        <DialogActions>
-            <Button onClick={closeDialog} color="secondary">
-            Cancel
+            <Box display={"flex"} flexDirection={"row"} justifyContent={"end"} alignItems={"center"}>
+                <Typography mr={1}>  
+                    {authSlice.user ? authSlice.user?.firstname + " " + authSlice.user?.lastname: "Неизвестный пользователь"}
+                </Typography>
+                <Button
+                    sx={{fontSize: "0.7rem"}}
+                    variant="contained"
+                    color="primary"
+                    onClick={authSlice.isAuth ? handelQuit : openAuthDialog}
+                >{authSlice.isAuth ? "Выход": "Войти"}</Button>
+            </Box>
+        </Container>
+        <AuthForm open={isAuthDialogOpen} onClose={closeAuthDialog}/>
+        <DialogPost open={isDialogOpen} message={message} 
+        media={media} editingPostId={editingPostId} 
+        setMedia={setMedia} setEditingPostId={setEditingPostId}
+        setIsDialogOpen={setIsDialogOpen} setPosts={setPosts}
+        setMessage={setMessage}
+        />
+        <Box>
+            <Button
+            variant="contained"
+            color="primary"
+            onClick={authSlice.isAuth ? openDialog : openAuthDialog}
+            >
+            Написать пост
             </Button>
-            <Button onClick={handleAddOrEditPost} color="primary">
-            {editingPostId ? 'Update Post' : 'Add Post'}
-            </Button>
-        </DialogActions>
-        </Dialog>
+        </Box>
+        <Box>
+            <PostList posts={posts} authSlice={authSlice} handleDelete={handleDelete} handleEdit={handleEdit}/>
+        </Box>
     </Container>
     );
 };
