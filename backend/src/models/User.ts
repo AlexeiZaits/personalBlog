@@ -3,15 +3,19 @@ import sequelize from "../config/database";
 import bcrypt from "bcryptjs";
 
 export interface UserAttributes {
-  id?: number;
-  username: string;
+  id?: string;
+  login: string;
+  firstname: string;
+  lastname: string;
   password: string;
 }
 
 class User extends Model<UserAttributes> {
-  public id!: number;
-  public username!: string;
+  public id!: string;
   public password!: string;
+  public login! : string;
+  public firstname! : string;
+  public lastname! : string;
   
   async comparePassword(candidatePassword: string): Promise<boolean> {
     return bcrypt.compare(candidatePassword, this.password);
@@ -21,14 +25,23 @@ class User extends Model<UserAttributes> {
 User.init(
   {
     id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
+      type: DataTypes.STRING,
       primaryKey: true,
     },
-    username: {
+    login: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
+      unique: true
+    },
+    firstname: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: false,
+    },
+    lastname: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: false,
     },
     password: {
       type: DataTypes.STRING,

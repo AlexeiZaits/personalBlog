@@ -4,9 +4,11 @@ import sequelize from "../config/database";
 class Post extends Model {
   public id!: number;
   public content!: string;
-  public mediaUrl!: string | null; // URL для хранения медиа (картинок/видео)
-  public userId!: number; // ID автора записи
-  public createdAt!: Date; // Дата создания записи
+  public lastname!: string;
+  public firstname!: string;
+  public mediaUrls!: string[] | null;
+  public userId!: string;
+  public createdAt!: Date;
 }
 
 Post.init(
@@ -20,12 +22,20 @@ Post.init(
       type: DataTypes.TEXT,
       allowNull: false,
     },
-    mediaUrl: {
-      type: DataTypes.STRING,
+    lastname: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
+    firstname: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
+    mediaUrls: {
+      type: DataTypes.ARRAY(DataTypes.STRING),
       allowNull: true,
     },
     userId: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
       allowNull: false,
     },
     createdAt: {

@@ -1,10 +1,11 @@
 import { DataTypes, Model } from "sequelize";
 import sequelize from "../config/database";
+import User from "./User";
 
 class RefreshToken extends Model {
-  public id!: number;
-  public token!: string;
-  public userId!: number;
+  public id!: number; // Добавлено поле `id` как первичный ключ
+  public userId!: string; // Внешний ключ для связи с User
+  public refreshToken!: string;
   public expiresAt!: Date;
 
   isExpired(): boolean {
@@ -19,12 +20,17 @@ RefreshToken.init(
       autoIncrement: true,
       primaryKey: true,
     },
-    token: {
+    userId: {
       type: DataTypes.STRING,
       allowNull: false,
+      references: {
+        model: User,
+        key: "id",
+      },
+      onDelete: "CASCADE",
     },
-    userId: {
-      type: DataTypes.INTEGER,
+    refreshToken: {
+      type: DataTypes.STRING(500),
       allowNull: false,
     },
     expiresAt: {
@@ -37,5 +43,9 @@ RefreshToken.init(
     modelName: "RefreshToken",
   }
 );
+
+// Устанавливаем связь
+RefreshToken.belongsTo(User, { foreignKey: "userId", as: "user" });
+User.hasMany(RefreshToken, { foreignKey: "userId", as: "refreshTokens" });
 
 export default RefreshToken;
