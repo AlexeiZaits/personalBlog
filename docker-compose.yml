@@ -18,7 +18,8 @@ services:
     env_file:
       - .env
     build:
-      context: ./backend
+      context: .
+      dockerfile: backend/Dockerfile
     ports:
       - "3000:3000"
     environment:
@@ -27,9 +28,7 @@ services:
       DB_PORT: 5432
     depends_on:
       - db
-    volumes:
-      - ./backend:/app
-    command: npm run dev
+    command: npm run start
     networks:
       - app-network
 
