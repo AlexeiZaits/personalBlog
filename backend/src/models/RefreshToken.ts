@@ -21,7 +21,7 @@ RefreshToken.init(
       primaryKey: true,
     },
     userId: {
-      type: DataTypes.STRING,
+      type: DataTypes.UUIDV4,
       allowNull: false,
       references: {
         model: User,

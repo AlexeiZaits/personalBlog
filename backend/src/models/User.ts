@@ -23,10 +23,11 @@ class User extends Model<UserAttributes> {
 }
 
 User.init(
-  {
+  { 
     id: {
-      type: DataTypes.STRING,
+      type: DataTypes.UUIDV4,
       primaryKey: true,
+      defaultValue: DataTypes.UUIDV4,
     },
     login: {
       type: DataTypes.STRING,

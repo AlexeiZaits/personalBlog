@@ -35,7 +35,7 @@ Post.init(
       allowNull: true,
     },
     userId: {
-      type: DataTypes.STRING,
+      type: DataTypes.UUIDV4,
       allowNull: false,
     },
     createdAt: {
